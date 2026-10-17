@@ -1,7 +1,10 @@
 # AI Enablement Kit
 
-Interne KI-Tools für OKAPI:Orbits – Use Cases entdecken, Automatisierungen bauen, Wissen dokumentieren, Kolleg:innen befähigen.
+[![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue)](https://www.python.org/)
+[![Tests](https://img.shields.io/badge/tests-10%20passing-brightgreen)](tests/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
+Interne KI-Tools für OKAPI:Orbits – Use Cases entdecken, Automatisierungen bauen, Wissen dokumentieren, Kolleg:innen befähigen.
 ## Was es kann
 
 - **Use Cases entdecken**: Beschreibe einen Arbeitsablauf → Claude findet 3–5 konkrete KI-Use-Cases mit Impact/Effort-Bewertung
@@ -84,3 +87,7 @@ pytest tests/ -v
 
 - `docs/use-cases-report.md` – 20 Use Cases über 4 Abteilungen
 - `docs/builder-demo.md` – Meeting-Summary + Content-Varianten
+
+## Screenshot
+
+![Streamlit UI](docs/screenshot-ui.png)
