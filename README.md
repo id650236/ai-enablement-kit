@@ -88,6 +88,8 @@ pytest tests/ -v
 - `docs/use-cases-report.md` – 20 Use Cases über 4 Abteilungen
 - `docs/builder-demo.md` – Meeting-Summary + Content-Varianten
 
-## Screenshot
+## Screenshots
 
 ![Streamlit UI](docs/screenshot-ui.png)
+![Streamlit UI](docs/screenshot1-ui.png)
+![Streamlit UI](docs/screenshot2-ui.png)
