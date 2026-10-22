@@ -7,3 +7,4 @@ data/*.db
 .DS_Store
 .idea/
 -rw-r--r--  ...  .env
+.streamlit/secrets.toml

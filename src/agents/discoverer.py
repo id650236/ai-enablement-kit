@@ -9,6 +9,7 @@ Beispiel:
         department="Operations",
         workflow="Wir beantworten täglich 50+ E-Mails...",
         team_size=8,
+        max_cases=8,
     )
 """
 
@@ -65,6 +66,7 @@ Wichtig:
             department: str,
             workflow: str,
             team_size: int = 5,
+            max_cases: int = 5,
     ) -> list[UseCase]:
         """Identifiziert KI-Use-Cases für einen Arbeitsablauf.
 
@@ -72,13 +74,14 @@ Wichtig:
             department: Name der Abteilung (z. B. "Operations").
             workflow: Beschreibung des aktuellen Arbeitsablaufs.
             team_size: Anzahl der betroffenen Personen.
+            max_cases: Maximale Anzahl der zu generierenden Use Cases.
 
         Returns:
             Liste von UseCase-Objekten.
         """
         logger.info(
-            "Discoverer analysiert %s (Team: %d, Workflow: %d chars)",
-            department, team_size, len(workflow),
+            "Discoverer analysiert %s (Team: %d, Workflow: %d chars, max: %d)",
+            department, team_size, len(workflow), max_cases,
         )
 
         user_prompt = f"""Abteilung: {department}
@@ -86,7 +89,7 @@ Teamgröße: {team_size}
 Aktueller Workflow:
 {workflow}
 
-Identifiziere 3-5 konkrete KI-Use-Cases für diese Abteilung.
+Identifiziere bis zu {max_cases} konkrete KI-Use-Cases für diese Abteilung.
 Antworte im folgenden JSON-Format:
 {{
   "use_cases": [
@@ -103,7 +106,9 @@ Antworte im folgenden JSON-Format:
 }}"""
 
         data = self.claude.complete_json(
-            self.SYSTEM_PROMPT, user_prompt, max_tokens=2500
+            self.SYSTEM_PROMPT,
+            user_prompt,
+            max_tokens=max(2500, max_cases * 400),
         )
         use_cases = [UseCase(**uc) for uc in data["use_cases"]]
         logger.info("%d Use-Cases identifiziert", len(use_cases))
@@ -135,12 +140,6 @@ Antworte im folgenden JSON-Format:
 
         Args:
             departments: Mapping von Abteilungsname → Workflow-Beschreibung.
-                Beispiel:
-                    {
-                        "Operations": "Wir überwachen 40+ Satelliten...",
-                        "Marketing": "Wir schreiben Blogposts, LinkedIn...",
-                        "Engineering": "Wir reviewen Code und schreiben Tests...",
-                    }
             team_size_default: Teamgröße, falls nicht anders angegeben.
 
         Returns:
