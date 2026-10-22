@@ -1,11 +1,7 @@
-"""Streamlit-UI für das AI Enablement Kit.
+"""Streamlit-UI für das AI Enablement Kit."""
 
-Vier Tabs für die vier Kernaufgaben:
-1. Use Cases entdecken
-2. Meeting zusammenfassen
-3. Content adaptieren
-4. Wissensbasis durchsuchen
-"""
+import base64
+from datetime import datetime
 
 import httpx
 import streamlit as st
@@ -27,6 +23,28 @@ st.caption(
 tab1, tab2, tab3, tab4 = st.tabs(
     ["🔍 Use Cases", "📝 Meeting", "✍️ Content", "📚 Wissensbasis"]
 )
+
+# Hilfsfunktion für den PDF-Download
+def render_pdf_download(markdown_text: str, filename: str):
+    if st.button("📥 Als PDF herunterladen", key=f"btn_pdf_{filename}"):
+        with st.spinner("PDF wird generiert..."):
+            try:
+                r_pdf = httpx.post(
+                    f"{API_URL}/export/pdf",
+                    json={"markdown": markdown_text},
+                    timeout=60.0,
+                )
+                r_pdf.raise_for_status()
+                pdf_bytes = base64.b64decode(r_pdf.json()["pdf_base64"])
+                st.download_button(
+                    label="PDF speichern",
+                    data=pdf_bytes,
+                    file_name=filename,
+                    mime="application/pdf",
+                    key=f"dl_pdf_{filename}",
+                )
+            except httpx.HTTPError as e:
+                st.error(f"PDF-Fehler: {e}")
 
 # ---------------------------------------------------------------------------
 # Tab 1: Use Cases entdecken
@@ -84,6 +102,12 @@ with tab1:
 
                     with st.expander("📄 Markdown-Report"):
                         st.markdown(data["markdown"])
+                    
+                    # PDF-Download
+                    date_str = datetime.now().strftime("%Y-%m-%d")
+                    filename = f"use_cases_{department.lower()}_{date_str}.pdf"
+                    render_pdf_download(data["markdown"], filename)
+
                 except httpx.HTTPError as e:
                     st.error(f"Fehler: {e}")
 
@@ -144,6 +168,16 @@ with tab2:
                         )
                         for q in data["open_questions"]:
                             st.markdown(f"- {q}")
+
+                    # PDF-Download (Markdown für das Meeting zusammenbauen)
+                    md_lines = [f"# Meeting: {meeting_title}\n", f"## Zusammenfassung\n{data['summary']}\n", "## Action Items"]
+                    for item in data["action_items"]:
+                        md_lines.append(f"- {item['task']} (Owner: {item.get('owner', '—')})")
+                    
+                    safe_title = meeting_title.lower().replace(" ", "_")
+                    filename = f"meeting_{safe_title}.pdf"
+                    render_pdf_download("\n".join(md_lines), filename)
+
                 except httpx.HTTPError as e:
                     st.error(f"Fehler: {e}")
 
@@ -180,6 +214,11 @@ with tab3:
                     st.markdown(f"### Ergebnis für **{data['channel']}**")
                     st.markdown(data["adapted"])
                     st.code(data["adapted"], language="markdown")
+                    
+                    # PDF-Download
+                    filename = f"content_{channel}.pdf"
+                    render_pdf_download(data["adapted"], filename)
+
                 except httpx.HTTPError as e:
                     st.error(f"Fehler: {e}")
 
@@ -220,5 +259,16 @@ with tab4:
                 )
                 if entry.get("tags"):
                     st.caption(f"Tags: {entry['tags']}")
+                    
+            # PDF-Download
+            if data["count"] > 0:
+                md_lines = [f"# Suchergebnisse für '{query}'\n"]
+                for entry in data["results"]:
+                    md_lines.append(f"## {entry['title']} ({entry['category']})")
+                
+                safe_query = query.lower().replace(" ", "_")
+                filename = f"wissen_{safe_query}.pdf"
+                render_pdf_download("\n".join(md_lines), filename)
+                
         except httpx.HTTPError as e:
             st.error(f"Fehler: {e}")

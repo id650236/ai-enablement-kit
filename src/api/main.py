@@ -5,7 +5,10 @@ Streamlit-UI als auch andere Tools sie nutzen können.
 """
 
 import logging
+import tempfile, os
+import base64
 
+from md2pdf import convert
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 
@@ -164,3 +167,24 @@ def search_knowledge(q: str, category: str | None = None) -> dict:
             for e in entries
         ],
     }
+
+
+@app.post("/export/pdf")
+def export_pdf(req: dict):
+    markdown_content = req.get("markdown", "")
+    if not markdown_content:
+        raise HTTPException(status_code=400, detail="Kein Markdown übergeben")
+    
+    with tempfile.NamedTemporaryFile(suffix=".md", delete=False, mode="w", encoding="utf-8") as f:
+        f.write(markdown_content)
+        md_path = f.name
+    
+    pdf_path = md_path.replace(".md", ".pdf")
+    try:
+        convert(md_path, pdf_path)
+        with open(pdf_path, "rb") as f:
+            pdf_bytes = f.read()
+        return {"pdf_base64": base64.b64encode(pdf_bytes).decode()}
+    finally:
+        if os.path.exists(md_path): os.unlink(md_path)
+        if os.path.exists(pdf_path): os.unlink(pdf_path)
