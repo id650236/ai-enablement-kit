@@ -9,3 +9,4 @@ sqlalchemy==2.0.36
 httpx==0.27.2
 pytest==8.3.0
 rich==13.9.0
+pymd2pdf 
