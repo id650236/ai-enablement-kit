@@ -41,12 +41,19 @@ from src.agents import (  # noqa: E402
 
 @st.cache_resource
 def get_agents():
-    return {
+    agents = {
         "discoverer": UseCaseDiscoverer(),
         "summarizer": MeetingSummarizer(),
         "adapter": ContentAdapter(),
-        "documenter": Documenter(),
     }
+    # Documenter nur laden, wenn DB funktioniert (auf Cloud oft nicht)
+    try:
+        agents["documenter"] = Documenter()
+    except Exception as e:
+        # Auf der Cloud schlägt das fehl – wir ignorieren es
+        agents["documenter"] = None
+        print(f"Documenter nicht verfügbar: {e}")
+    return agents
 
 agents = get_agents()
 
@@ -243,30 +250,38 @@ with tab4:
     st.subheader("Wissensbasis durchsuchen")
     st.write("Finde Anleitungen, Use Cases und Best Practices.")
 
-    col1, col2 = st.columns([3, 1])
-    with col1:
-        query = st.text_input("Suchbegriff", value="")
-    with col2:
-        category = st.selectbox("Kategorie", ["alle", "tool", "use_case", "best_practice"])
+    # NEU: Prüfen, ob Documenter geladen ist
+    if agents.get("documenter") is None:
+        st.info(
+            "Die Wissensbasis ist in dieser Demo-Umgebung (Streamlit Cloud) "
+            "nicht verfügbar, da das Dateisystem flüchtig ist. "
+            "Lokal funktioniert sie vollständig."
+        )
+    else:
+        col1, col2 = st.columns([3, 1])
+        with col1:
+            query = st.text_input("Suchbegriff", value="")
+        with col2:
+            category = st.selectbox("Kategorie", ["alle", "tool", "use_case", "best_practice"])
 
-    if query.strip():
-        try:
-            cat = None if category == "alle" else category
-            entries = agents["documenter"].kb.search(query, category=cat)
+        if query.strip():
+            try:
+                cat = None if category == "alle" else category
+                entries = agents["documenter"].kb.search(query, category=cat)
 
-            st.info(f"{len(entries)} Treffer für '{query}'")
+                st.info(f"{len(entries)} Treffer für '{query}'")
 
-            for entry in entries:
-                st.markdown(f"**{entry.title}** — _{entry.category}_")
-                if entry.tags:
-                    st.caption(f"Tags: {entry.tags}")
-
-            if entries:
-                md_lines = [f"# Suchergebnisse für '{query}'\n"]
                 for entry in entries:
-                    md_lines.append(f"## {entry.title} ({entry.category})")
-                safe_query = query.lower().replace(" ", "_")
-                filename = f"wissen_{safe_query}.pdf"
-                render_pdf_download("\n".join(md_lines), filename, key="pdf_tab4")
-        except Exception as e:
-            st.error(f"Fehler: {e}")
+                    st.markdown(f"**{entry.title}** — _{entry.category}_")
+                    if entry.tags:
+                        st.caption(f"Tags: {entry.tags}")
+
+                if entries:
+                    md_lines = [f"# Suchergebnisse für '{query}'\n"]
+                    for entry in entries:
+                        md_lines.append(f"## {entry.title} ({entry.category})")
+                    safe_query = query.lower().replace(" ", "_")
+                    filename = f"wissen_{safe_query}.pdf"
+                    render_pdf_download("\n".join(md_lines), filename, key="pdf_tab4")
+            except Exception as e:
+                st.error(f"Fehler: {e}")
