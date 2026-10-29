@@ -2,63 +2,49 @@
 
 Schreibt die Ausgabe nach docs/builder-demo.md und zeigt eine
 kurze Zusammenfassung in der Konsole.
+
+Verwendet generische Business-Beispiele (nicht firmenspezifisch).
 """
 
 from pathlib import Path
 
 from src.agents.builder import ContentAdapter, MeetingSummarizer
 
+# Generisches Marketing-/Business-Meeting
 TRANSCRIPT = """
-Anna (Ops Lead): Danke, dass ihr alle da seid. Wir müssen über die
-Kollisionswarnung für XR-42 sprechen. Die aktuelle Pc liegt bei 1.2e-3.
-
-Ben (Flight Dynamics): Ich habe die Bahndaten heute Morgen analysiert.
-Das Risiko ist real, aber nicht akut. TCA ist in 36 Stunden.
-
-Anna: Gut. Was schlägst du vor?
-
-Ben: Ich würde ein Manöver vorbereiten, aber erst in 12 Stunden zünden,
-wenn wir die nächsten Tracking-Daten haben. Bis dahin beobachten.
-
-Anna: Einverstanden. Wer informiert den Kunden?
-
-Clara (Customer Success): Ich übernehme das. Bis heute 18 Uhr habe ich
-eine erste Einschätzung raus.
-
-Anna: Perfekt. Eine Sache noch: Das Software-Update für die neue
-Kollisions-API muss diese Woche raus. Können wir Mittwoch deployen?
-
-Ben: Mittwoch ist sportlich, aber machbar wenn die Tests heute laufen.
-
-Anna: Dann machen wir Mittwoch. Clara, kannst du die Release-Notes
-vorbereiten?
-
-Clara: Ja, bis Dienstag.
-
-Anna: Und brauchen wir ein Update für die interne Dokumentation?
-
-Ben: Gute Frage, das ist noch offen. Ich kläre das mit dem Tech Writer.
-
-Anna: Okay, dann sind wir durch. Danke euch.
+Anna (Marketing Lead): Danke für eure Zeit. Wir müssen die Q3-Kampagne finalisieren.
+Ben (Content): Der Blogpost ist fertig, ich brauche noch ein Review von euch.
+Anna: Bis wann kannst du die LinkedIn-Version vorbereiten?
+Ben: Bis Mittwoch. Clara, kannst du die Newsletter-Version übernehmen?
+Clara (CRM): Ja, aber ich brauche die finale Überschrift bis Montag.
+Anna: Verstanden. Eine Sache noch: Das Budget für Q4 ist noch offen.
+Ben: Gute Frage, das müssen wir mit dem CFO klären. Ich schreibe ihm heute.
+Anna: Perfekt. Dann sind wir durch.
 """
 
+# Generischer Content-Text (z. B. für ein Produkt-Update)
 ORIGINAL_CONTENT = (
-    "OKAPI:Orbits hat heute ein neues Modul zur automatischen "
-    "Kollisionsvermeidung vorgestellt. Es reduziert die manuelle "
-    "Prüfzeit um 70% und wird ab Q1 2026 für alle Kunden verfügbar sein."
+    "Unser Unternehmen hat heute ein neues Feature vorgestellt, das "
+    "die manuelle Bearbeitungszeit um 40% reduziert. Es ist ab "
+    "sofort für alle Bestandskunden verfügbar."
 )
 
 
 def main() -> None:
     print("=" * 70)
-    print("BUILDER-DEMO")
+    print("BUILDER-DEMO (Generisch)")
     print("=" * 70)
 
     # --- Meeting-Summarizer ---
     print("\n[1/2] Meeting-Summarizer läuft...")
     summarizer = MeetingSummarizer()
+    
+    # Hier übergeben wir einen generischen Firmennamen. 
+    # (Falls du builder.py noch nicht angepasst hast, ignoriert Python den Parameter einfach.)
     result = summarizer.summarize(
-        TRANSCRIPT, meeting_title="Ops Weekly – Kollisionswarnung XR-42"
+        TRANSCRIPT, 
+        meeting_title="Q3-Kampagnen-Planung",
+        company="Muster GmbH"
     )
     print(f"      → {len(result.action_items)} Action Items extrahiert")
     print(f"      → {len(result.decisions)} Entscheidungen erkannt")
@@ -66,8 +52,9 @@ def main() -> None:
     # --- Content-Adapter ---
     print("\n[2/2] Content-Adapter läuft (linkedin + slack)...")
     adapter = ContentAdapter()
-    linkedin = adapter.adapt(ORIGINAL_CONTENT, channel="linkedin")
-    slack = adapter.adapt(ORIGINAL_CONTENT, channel="slack")
+    
+    linkedin = adapter.adapt(ORIGINAL_CONTENT, channel="linkedin", company="Muster GmbH")
+    slack = adapter.adapt(ORIGINAL_CONTENT, channel="slack", company="Muster GmbH")
     print(f"      → LinkedIn: {len(linkedin)} Zeichen")
     print(f"      → Slack: {len(slack)} Zeichen")
 
@@ -75,7 +62,7 @@ def main() -> None:
     lines = [
         "# Builder-Demo\n",
         "## Meeting-Zusammenfassung\n",
-        "**Meeting:** Ops Weekly – Kollisionswarnung XR-42\n",
+        "**Meeting:** Q3-Kampagnen-Planung\n",
         f"\n{result.summary}\n",
         "\n## Action Items\n",
     ]
@@ -106,7 +93,6 @@ def main() -> None:
     output.write_text("\n".join(lines), encoding="utf-8")
 
     print(f"\n📄 Markdown gespeichert: {output}")
-
 
 
 if __name__ == "__main__":
