@@ -3,6 +3,9 @@
 Analysiert Beschreibungen von Arbeitsabläufen aus verschiedenen
 Abteilungen und identifiziert konkrete, umsetzbare KI-Use-Cases.
 
+Der Unternehmenskontext wird als Parameter übergeben – die Klasse
+ist generisch für jede Branche nutzbar.
+
 Beispiel:
     discoverer = UseCaseDiscoverer()
     cases = discoverer.discover(
@@ -10,6 +13,7 @@ Beispiel:
         workflow="Wir beantworten täglich 50+ E-Mails...",
         team_size=8,
         max_cases=8,
+        company="Muster GmbH",
     )
 """
 
@@ -37,7 +41,7 @@ class UseCase(BaseModel):
 class UseCaseDiscoverer:
     """Findet KI-Use-Cases in Abteilungen."""
 
-    SYSTEM_PROMPT = """Du bist ein KI-Berater bei einem NewSpace-Startup.
+    SYSTEM_PROMPT = """Du bist ein KI-Berater bei {company}.
 Deine Aufgabe: Analysiere die Beschreibung eines Arbeitsablaufs
 und identifiziere konkrete, umsetzbare KI-Use-Cases.
 
@@ -67,6 +71,7 @@ Wichtig:
             workflow: str,
             team_size: int = 5,
             max_cases: int = 5,
+            company: str = "Ihrem Unternehmen",
     ) -> list[UseCase]:
         """Identifiziert KI-Use-Cases für einen Arbeitsablauf.
 
@@ -75,17 +80,19 @@ Wichtig:
             workflow: Beschreibung des aktuellen Arbeitsablaufs.
             team_size: Anzahl der betroffenen Personen.
             max_cases: Maximale Anzahl der zu generierenden Use Cases.
+            company: Name des Unternehmens (für Kontext im Prompt).
 
         Returns:
             Liste von UseCase-Objekten.
         """
         logger.info(
-            "Discoverer analysiert %s (Team: %d, Workflow: %d chars, max: %d)",
-            department, team_size, len(workflow), max_cases,
+            "Discoverer analysiert %s @ %s (Team: %d, Workflow: %d chars, max: %d)",
+            department, company, team_size, len(workflow), max_cases,
         )
 
         user_prompt = f"""Abteilung: {department}
 Teamgröße: {team_size}
+Unternehmen: {company}
 Aktueller Workflow:
 {workflow}
 
@@ -105,8 +112,11 @@ Antworte im folgenden JSON-Format:
   ]
 }}"""
 
+        # System-Prompt mit dem Unternehmensnamen füllen
+        system_prompt = self.SYSTEM_PROMPT.format(company=company)
+
         data = self.claude.complete_json(
-            self.SYSTEM_PROMPT,
+            system_prompt,
             user_prompt,
             max_tokens=max(2500, max_cases * 400),
         )
@@ -135,24 +145,27 @@ Antworte im folgenden JSON-Format:
             self,
             departments: dict[str, str],
             team_size_default: int = 5,
+            company: str = "Ihrem Unternehmen",
     ) -> dict[str, list[UseCase]]:
         """Analysiert mehrere Abteilungen in einem Durchlauf.
 
         Args:
             departments: Mapping von Abteilungsname → Workflow-Beschreibung.
             team_size_default: Teamgröße, falls nicht anders angegeben.
+            company: Name des Unternehmens (für Kontext im Prompt).
 
         Returns:
             Mapping von Abteilungsname → Liste von UseCase-Objekten.
         """
         results: dict[str, list[UseCase]] = {}
         for dept, workflow in departments.items():
-            logger.info("Multi-Discover: %s", dept)
+            logger.info("Multi-Discover: %s @ %s", dept, company)
             try:
                 results[dept] = self.discover(
                     department=dept,
                     workflow=workflow,
                     team_size=team_size_default,
+                    company=company,
                 )
             except Exception as exc:
                 logger.error("Discover für %s fehlgeschlagen: %s", dept, exc)

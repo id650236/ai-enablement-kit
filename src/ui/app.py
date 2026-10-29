@@ -15,9 +15,15 @@ from md2pdf import convert
 # --- WICHTIG: set_page_config muss die erste Streamlit-Funktion sein ---
 st.set_page_config(
     page_title="AI Enablement Kit",
-    page_icon="🚀",
+    page_icon="🚀",  # Das Emoji gehört hier hin
     layout="wide",
 )
+
+# --- Logo laden ---
+try:
+    st.logo("assets/logo.svg")
+except Exception:
+    pass  # Falls das Logo fehlt, App nicht crashen
 
 # --- Secrets / Env laden ---
 def get_api_key() -> str:
@@ -60,8 +66,16 @@ agents = get_agents()
 # --- Ab hier UI ---
 st.title("🚀 AI Enablement Kit")
 st.caption(
-    "Interne KI-Tools für OKAPI:Orbits – "
-    "Use Cases entdecken, Meetings zusammenfassen, Content adaptieren."
+    "Interne KI-Tools – Use Cases entdecken, Meetings zusammenfassen, "
+    "Content adaptieren."
+)
+
+# NEU: Sidebar für Unternehmenskontext
+st.sidebar.header("⚙️ Einstellungen")
+company_name = st.sidebar.text_input(
+    "Unternehmen",
+    value="Ihr Unternehmen",
+    help="Name des Unternehmens – die KI passt Beispiele und Sprache an.",
 )
 
 tab1, tab2, tab3, tab4 = st.tabs(
@@ -132,6 +146,7 @@ with tab1:
                         workflow=workflow,
                         team_size=int(team_size),
                         max_cases=int(max_cases),
+                        company=company_name
                     )
                     st.success(f"✅ {len(cases)} Use Cases gefunden")
 
@@ -170,7 +185,7 @@ with tab2:
         else:
             with st.spinner("Claude fasst zusammen..."):
                 try:
-                    summary = agents["summarizer"].summarize(transcript, meeting_title)
+                    summary = agents["summarizer"].summarize(transcript, meeting_title, company=company_name)
 
                     st.markdown("### 📋 Zusammenfassung")
                     st.write(summary.summary)
@@ -232,7 +247,7 @@ with tab3:
         else:
             with st.spinner(f"Claude adaptiert für {channel}..."):
                 try:
-                    adapted = agents["adapter"].adapt(text, channel)
+                    adapted = agents["adapter"].adapt(text, channel, company=company_name)
 
                     st.markdown(f"### Ergebnis für **{channel}**")
                     st.markdown(adapted)

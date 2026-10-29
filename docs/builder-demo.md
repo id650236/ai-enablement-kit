@@ -5,35 +5,35 @@
 **Meeting:** Ops Weekly – Kollisionswarnung XR-42
 
 
-Die Kollisionswarnung für Satellit XR-42 wurde besprochen. Die aktuelle Kollisionswahrscheinlichkeit liegt bei 1,2e-3, der Time of Closest Approach (TCA) ist in 36 Stunden. Es wurde entschieden, zunächst weitere Tracking-Daten abzuwarten und ein Manöver frühestens in 12 Stunden durchzuführen. Zusätzlich wurde das Deployment der neuen Kollisions-API für Mittwoch festgelegt.
+Im Ops Weekly wurde die Kollisionswarnung für Satellit XR-42 mit einer aktuellen Kollisionswahrscheinlichkeit von 1,2e-3 besprochen. Der Time of Closest Approach (TCA) liegt in 36 Stunden. Es wurde entschieden, zunächst weitere Tracking-Daten abzuwarten und ein Manöver erst in 12 Stunden vorzubereiten. Zusätzlich wurde das Deployment des Software-Updates für die neue Kollisions-API auf Mittwoch terminiert.
 
 
 ## Action Items
 
-1. **Bahndaten beobachten und Manöver für XR-42 vorbereiten; Zündentscheidung nach Eingang der nächsten Tracking-Daten in ~12 Stunden**  
+1. **Manöver vorbereiten und nach Eingang der nächsten Tracking-Daten in 12 Stunden entscheiden**  
    _Owner:_ Ben · _Deadline:_ In 12 Stunden
 
-2. **Erste Kundeninformation zur Kollisionswarnung XR-42 versenden**  
+2. **Erste Einschätzung zur Kollisionswarnung an den Kunden kommunizieren**  
    _Owner:_ Clara · _Deadline:_ Heute 18:00 Uhr
 
-3. **Tests für Kollisions-API-Update durchführen**  
-   _Owner:_ Ben · _Deadline:_ Heute
-
-4. **Release-Notes für Kollisions-API-Update vorbereiten**  
+3. **Release-Notes für das Kollisions-API-Update vorbereiten**  
    _Owner:_ Clara · _Deadline:_ Dienstag
 
-5. **Klären, ob interne Dokumentation aktualisiert werden muss (Abstimmung mit Tech Writer)**  
+4. **Tests für das Software-Update durchführen**  
+   _Owner:_ Ben · _Deadline:_ Heute
+
+5. **Klärung des Aktualisierungsbedarfs der internen Dokumentation mit dem Tech Writer**  
    _Owner:_ Ben · _Deadline:_ Nicht genannt
 
 
 ## Offene Fragen
 
-- Muss die interne Dokumentation im Zuge des Kollisions-API-Updates aktualisiert werden?
+- Muss die interne Dokumentation im Zuge des API-Updates aktualisiert werden?
 
 ## Entscheidungen
 
-- Manöver für XR-42 wird nicht sofort gezündet; Entscheidung erfolgt nach Eingang der nächsten Tracking-Daten in ca. 12 Stunden.
-- Deployment des Software-Updates für die neue Kollisions-API ist für Mittwoch geplant.
+- Manöverzündung wird frühestens in 12 Stunden durchgeführt, nach Auswertung der nächsten Tracking-Daten.
+- Deployment des Software-Updates für die neue Kollisions-API erfolgt am Mittwoch.
 
 ---
 
@@ -47,29 +47,27 @@ Die Kollisionswarnung für Satellit XR-42 wurde besprochen. Die aktuelle Kollisi
 
 ### LinkedIn
 
-**Kollisionsvermeidung im Weltraum – neu gedacht.**
+**Kollisionsvermeidung im Orbit – effizienter als je zuvor.**
 
-Wer im Satellitenbetrieb arbeitet, kennt das Problem: Conjunction Alerts kommen rein, das Team prüft manuell, die Uhr tickt. Das kostet Zeit – und Nerven.
+Satelliten werden mehr, der Weltraum enger. Genau deshalb haben wir heute ein neues Modul zur automatischen Kollisionsvermeidung vorgestellt.
 
-Genau hier setzt unser neues Modul zur automatischen Kollisionsvermeidung an.
+Das Ergebnis aus monatelanger Entwicklungsarbeit: **70 % weniger manuelle Prüfzeit** für Operatoren – ohne Abstriche bei der Sicherheit.
 
-Was es konkret bringt:
-→ 70 % weniger manuelle Prüfzeit
-→ Schnellere Entscheidungsgrundlagen für Operatoren
-→ Verfügbar für alle Kunden ab Q1 2026
+Was das konkret bedeutet? Weniger Routineaufwand, mehr Kapazität für die Entscheidungen, die wirklich zählen. Denn im Bereich Space Traffic Management geht es nicht nur um Effizienz – es geht um Verantwortung gegenüber einer geteilten Infrastruktur.
 
-Wir glauben, dass Weltraumoperationen sicherer und effizienter werden müssen – nicht irgendwann, sondern jetzt. Mit zunehmender Satellitendichte im Orbit ist Automatisierung kein Nice-to-have mehr, sondern operative Notwendigkeit.
+Das Modul wird ab **Q1 2026** für alle unsere Kunden verfügbar sein.
 
-Wir freuen uns darauf, dieses Modul gemeinsam mit unseren Kunden in den Betrieb zu bringen.
+Wir freuen uns auf den nächsten Schritt – und auf die Gespräche, die daraus entstehen. Habt ihr Fragen zur Technologie oder zu möglichen Anwendungsfällen? Schreibt uns gerne.
 
-Fragen? Gerne direkt in die Kommentare oder per Nachricht.
-
-#SpaceTraffic #SatelliteOperations #NewSpace #SpaceSustainability #OKAPIOrbits
+\#SpaceTrafficManagement #NewSpace #Satelliten #Kollisionsvermeidung #OKAPIOrbits
 
 ### Slack
 
-🚀 **Frische News von OKAPI:Orbits!**
+🚀 **Neues Feature Alert!**
 
-Die haben heute ihr neues Modul zur automatischen Kollisionsvermeidung gedropt – und die Zahlen können sich sehen lassen: **70% weniger manuelle Prüfzeit.** 👀
+OKAPI:Orbits hat gerade ein Modul zur **automatischen Kollisionsvermeidung** gedropt – und das ist ziemlich cool:
 
-Ab **Q1 2026** ist es für alle Kunden verfügbar.
+✅ 70% weniger manuelle Prüfzeit
+📅 Ab Q1 2026 für alle Kunden verfügbar
+
+Mehr Infos folgen! 👀

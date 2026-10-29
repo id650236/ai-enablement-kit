@@ -42,7 +42,7 @@ class MeetingSummary(BaseModel):
 class MeetingSummarizer:
     """Fasst Meeting-Transkripte strukturiert zusammen."""
 
-    SYSTEM_PROMPT = """Du bist ein präziser Meeting-Assistent bei einem NewSpace-Startup.
+    SYSTEM_PROMPT = """Du bist ein präziser Meeting-Assistent bei {company}.
 Deine Aufgabe: Extrahiere strukturierte Informationen aus Transkripten.
 
 Regeln:
@@ -56,12 +56,12 @@ Regeln:
         self.claude = ClaudeClient()
 
     def summarize(
-            self,
-            transcript: str,
-            meeting_title: str = "Meeting",
+        self,
+        transcript: str,
+        meeting_title: str = "Meeting",
+        company: str = "Ihrem Unternehmen",
     ) -> MeetingSummary:
-        """Fasst ein Meeting-Transkript zusammen."""
-        logger.info("Summarize: %s (%d chars)", meeting_title, len(transcript))
+        logger.info("Summarize: %s @ %s (%d chars)", meeting_title, company, len(transcript))
 
         user_prompt = f"""Meeting: {meeting_title}
 
@@ -78,8 +78,9 @@ Erstelle eine strukturierte Zusammenfassung im folgenden JSON-Format:
   "decisions": ["..."]
 }}"""
 
+        system_prompt = self.SYSTEM_PROMPT.format(company=company)
         data = self.claude.complete_json(
-            self.SYSTEM_PROMPT, user_prompt, max_tokens=2000
+            system_prompt, user_prompt, max_tokens=2000
         )
         return MeetingSummary(**data)
 
