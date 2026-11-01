@@ -311,27 +311,39 @@ with tab2:
                                     transcript_id, timeout=900
                                 )
 
-                                # 4. Segmente korrekt parsen: 'speaker' + 'transcript'
-                                segments = transcript_data.get("segments", [])
+                             # 4. Segmente robust parsen: Liste ODER Dict
+                                segments = []
+                                if isinstance(transcript_data, list):
+                                    segments = transcript_data          # Fall A: schon eine Liste
+                                elif isinstance(transcript_data, dict):
+                                    segments = transcript_data.get("segments", [])  # Fall B: Dict mit "segments"
+
                                 if not segments:
                                     st.warning("Transkript enthält keine Segmente.")
                                 else:
                                     lines = []
                                     for seg in segments:
                                         speaker = seg.get("speaker", "Unbekannt")
+                                        # Wichtig: Feld heißt "transcript", nicht "text"[reference:1]
                                         text = seg.get("transcript", "")
-                                        if text.strip():
+                                        if text and text.strip():
                                             lines.append(f"{speaker}: {text}")
-                                    full_text = "\n".join(lines)
 
-                                    st.session_state["ms_transcript_text"] = full_text
-                                    st.success("Transkript abgerufen!")
-                                    st.text_area(
-                                        "Transkript (bearbeitbar)",
-                                        value=full_text,
-                                        height=250,
-                                        key="ms_transcript_display"
-                                    )
+                                    if not lines:
+                                        st.warning(
+                                            "Segmente gefunden, aber kein Text. "
+                                            "Prüfe, ob der Provider 'text' statt 'transcript' liefert."
+                                        )
+                                    else:
+                                        full_text = "\n".join(lines)
+                                        st.session_state["ms_transcript_text"] = full_text
+                                        st.success("Transkript abgerufen!")
+                                        st.text_area(
+                                            "Transkript (bearbeitbar)",
+                                            value=full_text,
+                                            height=250,
+                                            key="ms_transcript_display"
+                                        )
                             except Exception as wait_error:
                                 st.warning(
                                     f"Transkript noch nicht bereit: {wait_error}. "
