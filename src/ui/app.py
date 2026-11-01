@@ -6,6 +6,9 @@ import tempfile
 from datetime import datetime
 from pathlib import Path
 import openai
+import requests 
+import time 
+
 
 # Projekt-Root zum Suchpfad hinzufügen
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
@@ -170,34 +173,41 @@ with tab1:
                 except Exception as e:
                     st.error(f"Fehler: {e}")
 
-# ---------------------------------------------------------------------------
-# Tab 2
+## ---------------------------------------------------------------------------
+# Tab 2: Meeting zusammenfassen (mit MeetStream SDK)
 # ---------------------------------------------------------------------------
 with tab2:
     st.subheader("Meeting zusammenfassen")
-    st.write("Füge ein Transkript ein oder nimm das Meeting direkt auf.")
+    st.write("Füge ein Transkript ein, nimm das Meeting auf oder starte einen Bot für ein Online-Meeting.")
 
-    # Auswahl der Eingabemethode
     input_method = st.radio(
         "Eingabemethode wählen:",
-        ["Text einfügen", "Audio aufnehmen"],
+        ["Text einfügen", "Audio aufnehmen", "Online-Meeting (MeetStream)"],
         horizontal=True,
-        key="input_method_radio" # Eindeutiger Key
+        key="input_method_radio_ms"
     )
 
     transcript_text = ""
+    meeting_title = st.text_input(
+        "Meeting-Titel", value="Ops Weekly", key="meeting_title_ms"
+    )
 
+    # =========================================================
+    # MODUS 1: Text einfügen
+    # =========================================================
     if input_method == "Text einfügen":
         transcript_text = st.text_area(
-            "Transkript", 
-            height=250, 
-            key="text_input_transcript" # Eindeutiger Key
+            "Transkript", height=250, key="text_input_transcript_ms"
         )
-    else:
-        audio_value = st.audio_input("Meeting aufnehmen", key="audio_recorder")
+
+    # =========================================================
+    # MODUS 2: Audio aufnehmen
+    # =========================================================
+    elif input_method == "Audio aufnehmen":
+        audio_value = st.audio_input("Meeting aufnehmen", key="audio_recorder_ms")
         if audio_value:
             st.audio(audio_value)
-            if st.button("Transkription starten", key="btn_transcribe"):
+            if st.button("Transkription starten", key="btn_transcribe_ms"):
                 with st.spinner("Audio wird transkribiert..."):
                     try:
                         import openai
@@ -207,30 +217,151 @@ with tab2:
                             file=audio_value,
                             language="de"
                         )
-                        transcript_text = transcript_response.text
+                        st.session_state["ms_transcript_text"] = transcript_response.text
                         st.success("Transkription abgeschlossen!")
-                        st.text_area(
-                            "Transkribierter Text (bearbeitbar)", 
-                            value=transcript_text, 
-                            height=200, 
-                            key="transcribed_text_area" # Eindeutiger Key
-                        )
                     except Exception as e:
                         st.error(f"Transkriptionsfehler: {e}")
 
-    meeting_title = st.text_input(
-        "Meeting-Titel", 
-        value="Ops Weekly", 
-        key="meeting_title_input"
-    )
+        if "ms_transcript_text" in st.session_state:
+            transcript_text = st.text_area(
+                "Transkribierter Text (bearbeitbar)",
+                value=st.session_state["ms_transcript_text"],
+                height=200,
+                key="transcribed_text_area_ms"
+            )
 
-    if st.button("📝 Zusammenfassen", type="primary", key="btn_summarize"):
+    # =========================================================
+    # MODUS 3: Online-Meeting (MeetStream) – Automatisiert
+    # =========================================================
+    elif input_method == "Online-Meeting (MeetStream)":
+        st.info("Der Bot tritt dem Meeting bei, zeichnet es auf und erstellt automatisch ein Transkript mit Sprecher-Labels.")
+
+        meeting_url = st.text_input(
+            "Meeting-URL (Zoom, Teams, Google Meet)",
+            placeholder="https://meet.google.com/abc-defg-hij",
+            key="ms_meeting_url"
+        )
+
+        # --- Bot erstellen ---
+        if st.button("🤖 Bot starten & Meeting aufzeichnen", key="btn_create_bot_ms"):
+            if not meeting_url:
+                st.warning("Bitte eine Meeting-URL eingeben.")
+            else:
+                with st.spinner("Bot wird erstellt..."):
+                    try:
+                        from meetstream import MeetStream
+                        ms = MeetStream()  # liest MEETSTREAM_API_KEY
+
+                        bot = ms.bots.create({
+                            "meeting_link": meeting_url,  # Wichtig: meeting_link, nicht meeting_url
+                            "bot_name": "AI Enablement Bot",
+                            "video_required": False,     # Audio-only ist schneller
+                            "recording_config": {
+                                "transcript": {
+                                    "provider": {
+                                        "deepgram": {
+                                            "model": "nova-3",
+                                            "language": "de",
+                                            "diarize": True   # Sprecher-Labels
+                                        }
+                                    }
+                                }
+                            }
+                        })
+
+                        st.session_state["ms_bot_id"] = bot["bot_id"]
+                        st.session_state["ms_transcript_id"] = bot.get("transcript_id")
+                        st.success(f"Bot erstellt (ID: {bot['bot_id']}). Er wartet auf den Beitritt.")
+                        if not bot.get("transcript_id"):
+                            st.warning("Hinweis: transcript_id noch nicht verfügbar. Er wird nach dem Meeting automatisch nachgeholt.")
+
+                    except Exception as e:
+                        st.error(f"Fehler beim Erstellen des Bots: {e}")
+
+        # --- Status prüfen & Transkript abrufen ---
+        if "ms_bot_id" in st.session_state:
+            bot_id = st.session_state["ms_bot_id"]
+
+            if st.button("🔄 Status aktualisieren & Transkript abrufen", key="btn_check_status_ms"):
+                with st.spinner("Prüfe Status und warte ggf. auf das Transkript..."):
+                    try:
+                        from meetstream import MeetStream
+                        ms = MeetStream()
+
+                        # 1. Bot-Status abfragen
+                        try:
+                            status = ms.bots.status(bot_id)
+                            st.info(f"Bot-Status: {status}")
+                        except Exception:
+                            st.info("Bot-Status konnte noch nicht abgerufen werden.")
+
+                        # 2. transcript_id sicherstellen (falls beim Create noch nicht da)
+                        transcript_id = st.session_state.get("ms_transcript_id")
+                        if not transcript_id:
+                            detail = ms.bots.detail(bot_id)
+                            transcript_id = detail.get("transcript_id")
+                            st.session_state["ms_transcript_id"] = transcript_id
+
+                        if not transcript_id:
+                            st.warning("Noch keine transcript_id verfügbar. Bitte später erneut versuchen.")
+                        else:
+                            # 3. Auf Transkript warten (mit Timeout)
+                            try:
+                                transcript_data = ms.transcripts.wait_for(
+                                    transcript_id, timeout=900
+                                )
+
+                                # 4. Segmente korrekt parsen: 'speaker' + 'transcript'
+                                segments = transcript_data.get("segments", [])
+                                if not segments:
+                                    st.warning("Transkript enthält keine Segmente.")
+                                else:
+                                    lines = []
+                                    for seg in segments:
+                                        speaker = seg.get("speaker", "Unbekannt")
+                                        text = seg.get("transcript", "")
+                                        if text.strip():
+                                            lines.append(f"{speaker}: {text}")
+                                    full_text = "\n".join(lines)
+
+                                    st.session_state["ms_transcript_text"] = full_text
+                                    st.success("Transkript abgerufen!")
+                                    st.text_area(
+                                        "Transkript (bearbeitbar)",
+                                        value=full_text,
+                                        height=250,
+                                        key="ms_transcript_display"
+                                    )
+                            except Exception as wait_error:
+                                st.warning(
+                                    f"Transkript noch nicht bereit: {wait_error}. "
+                                    "Bitte in einigen Minuten erneut versuchen."
+                                )
+
+                    except Exception as e:
+                        st.error(f"Fehler beim Abrufen des Transkripts: {e}")
+
+            # Wenn Transkript bereits vorhanden, anzeigen
+            if "ms_transcript_text" in st.session_state:
+                transcript_text = st.text_area(
+                    "Transkript (bearbeitbar)",
+                    value=st.session_state["ms_transcript_text"],
+                    height=250,
+                    key="ms_transcript_display_2"
+                )
+
+    # =========================================================
+    # Zusammenfassung (für alle Modi)
+    # =========================================================
+    if st.button("📝 Zusammenfassen", type="primary", key="btn_summarize_final_ms"):
         if len(transcript_text.strip()) < 20:
-            st.warning("Bitte ein Transkript einfügen oder aufnehmen (min. 20 Zeichen).")
+            st.warning("Bitte ein Transkript einfügen, aufnehmen oder per Bot abrufen.")
         else:
             with st.spinner("Claude fasst zusammen..."):
                 try:
-                    summary = agents["summarizer"].summarize(transcript_text, meeting_title)
+                    summary = agents["summarizer"].summarize(
+                        transcript_text, meeting_title
+                    )
 
                     st.markdown("### 📋 Zusammenfassung")
                     st.write(summary.summary)
@@ -269,7 +400,10 @@ with tab2:
 
                     safe_title = meeting_title.lower().replace(" ", "_")
                     filename = f"meeting_{safe_title}.pdf"
-                    render_pdf_download("\n".join(md_lines), filename, key="pdf_tab2")
+                    render_pdf_download(
+                        "\n".join(md_lines), filename, key="pdf_tab2_ms"
+                    )
+
                 except Exception as e:
                     st.error(f"Fehler: {e}")
 # ---------------------------------------------------------------------------

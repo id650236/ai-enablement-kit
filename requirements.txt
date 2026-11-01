@@ -11,3 +11,5 @@ pytest==8.3.0
 rich==13.9.0
 pymd2pdf 
 openai>=1.0.0
+requests>=2.31.0
+meetstream-sdk>=0.1.0
