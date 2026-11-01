@@ -5,6 +5,7 @@ import sys
 import tempfile
 from datetime import datetime
 from pathlib import Path
+import openai
 
 # Projekt-Root zum Suchpfad hinzufügen
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
@@ -174,18 +175,62 @@ with tab1:
 # ---------------------------------------------------------------------------
 with tab2:
     st.subheader("Meeting zusammenfassen")
-    st.write("Füge ein Transkript ein – du bekommst Action Items, Entscheidungen und offene Fragen.")
+    st.write("Füge ein Transkript ein oder nimm das Meeting direkt auf.")
 
-    meeting_title = st.text_input("Meeting-Titel", value="Ops Weekly")
-    transcript = st.text_area("Transkript", height=250)
+    # Auswahl der Eingabemethode
+    input_method = st.radio(
+        "Eingabemethode wählen:",
+        ["Text einfügen", "Audio aufnehmen"],
+        horizontal=True,
+        key="input_method_radio" # Eindeutiger Key
+    )
 
-    if st.button("📝 Zusammenfassen", type="primary"):
-        if len(transcript.strip()) < 20:
-            st.warning("Bitte ein Transkript einfügen (min. 20 Zeichen).")
+    transcript_text = ""
+
+    if input_method == "Text einfügen":
+        transcript_text = st.text_area(
+            "Transkript", 
+            height=250, 
+            key="text_input_transcript" # Eindeutiger Key
+        )
+    else:
+        audio_value = st.audio_input("Meeting aufnehmen", key="audio_recorder")
+        if audio_value:
+            st.audio(audio_value)
+            if st.button("Transkription starten", key="btn_transcribe"):
+                with st.spinner("Audio wird transkribiert..."):
+                    try:
+                        import openai
+                        client = openai.OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
+                        transcript_response = client.audio.transcriptions.create(
+                            model="whisper-1",
+                            file=audio_value,
+                            language="de"
+                        )
+                        transcript_text = transcript_response.text
+                        st.success("Transkription abgeschlossen!")
+                        st.text_area(
+                            "Transkribierter Text (bearbeitbar)", 
+                            value=transcript_text, 
+                            height=200, 
+                            key="transcribed_text_area" # Eindeutiger Key
+                        )
+                    except Exception as e:
+                        st.error(f"Transkriptionsfehler: {e}")
+
+    meeting_title = st.text_input(
+        "Meeting-Titel", 
+        value="Ops Weekly", 
+        key="meeting_title_input"
+    )
+
+    if st.button("📝 Zusammenfassen", type="primary", key="btn_summarize"):
+        if len(transcript_text.strip()) < 20:
+            st.warning("Bitte ein Transkript einfügen oder aufnehmen (min. 20 Zeichen).")
         else:
             with st.spinner("Claude fasst zusammen..."):
                 try:
-                    summary = agents["summarizer"].summarize(transcript, meeting_title, company=company_name)
+                    summary = agents["summarizer"].summarize(transcript_text, meeting_title)
 
                     st.markdown("### 📋 Zusammenfassung")
                     st.write(summary.summary)
@@ -227,7 +272,6 @@ with tab2:
                     render_pdf_download("\n".join(md_lines), filename, key="pdf_tab2")
                 except Exception as e:
                     st.error(f"Fehler: {e}")
-
 # ---------------------------------------------------------------------------
 # Tab 3
 # ---------------------------------------------------------------------------
