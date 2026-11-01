@@ -19,7 +19,7 @@ from md2pdf import convert
 # --- WICHTIG: set_page_config muss die erste Streamlit-Funktion sein ---
 st.set_page_config(
     page_title="AI Enablement Kit",
-    page_icon="🚀",  # Das Emoji gehört hier hin
+    page_icon="🚀",  
     layout="wide",
 )
 

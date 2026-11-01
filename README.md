@@ -4,7 +4,9 @@
 [![Tests](https://img.shields.io/badge/tests-10%20passing-brightgreen)](tests/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-Interne KI-Tools für OKAPI:Orbits – Use Cases entdecken, Automatisierungen bauen, Wissen dokumentieren, Kolleg:innen befähigen.
+# AI Enablement Kit
+
+Ein generisches KI-Tool zur Identifikation von Use Cases, Meeting-Zusammenfassung und Content-Adaption für Unternehmen jeder Branche., Wissen dokumentieren, Kolleg:innen befähigen.
 ## Was es kann
 
 - **Use Cases entdecken**: Beschreibe einen Arbeitsablauf → Claude findet 3–5 konkrete KI-Use-Cases mit Impact/Effort-Bewertung
